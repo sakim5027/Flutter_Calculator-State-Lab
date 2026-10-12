@@ -137,8 +137,8 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
         if (result == null || !result.isFinite) {
           showError(
             result == null
-                ? "Cannot divide by zero. Press AC or new number"
-                : "Invalid result. Press AC or new number",
+                ? "Cannot divide by zero. Press AC"
+                : "Invalid result. Press AC",
           );
           return;
         }
@@ -177,8 +177,8 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
       if (result == null || !result.isFinite) {
         showError(
           result == null
-              ? "Cannot divide by zero. Press AC or new number"
-              : "Invalid result. Press AC or new number",
+              ? "Cannot divide by zero. Press AC"
+              : "Invalid result. Press AC",
         );
         return;
       }
@@ -355,7 +355,9 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
                   ])
                     TactileButton(
                       label: value,
-                      accentColor: Colors.blueAccent,
+                      accentColor: value == "AC"
+                          ? Colors.blueAccent.shade400
+                          : Colors.blueAccent,
                       isDark: widget.isDark,
                       onPressed: () {
                         if ("0123456789".contains(value) && value.length == 1) {
@@ -411,9 +413,9 @@ class _TactileButtonState extends State<TactileButton> {
   @override
   Widget build(BuildContext context) {
     // Determine dynamic background and shadow colors
-    final baseColor = widget.isDark
-        ? const Color(0xFF222430)
-        : const Color(0xFFE0E5EC);
+    final baseColor = widget.label == "AC"
+        ? Colors.blueAccent.shade400
+        : (widget.isDark ? const Color(0xFF222430) : const Color(0xFFE0E5EC));
     final darkShadow = widget.isDark ? Colors.black87 : const Color(0xFFA3B1C6);
     final lightShadow = widget.isDark ? const Color(0xFF2F3244) : Colors.white;
 

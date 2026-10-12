@@ -18,7 +18,7 @@ void main() {
 // Summary: A StatefulWidget that owns the single source of truth for light/dark
 // mode. MaterialApp reads isDarkMode to pick a theme, and onToggleTheme lets the
 // child screen flip it via a callback — no need to pass data back up manually.
-// Reference: https://docs.flutter.dev/cookbook/design/themes
+
 class CalculatorApp extends StatefulWidget {
   const CalculatorApp({super.key});
 

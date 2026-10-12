@@ -78,6 +78,8 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
   bool startNewOperand = true;
   bool justEvaluated = false;
   String display = "0";
+  String statusMessage = "Enter a number";
+  bool hasError = false;
 
   double? calculate(double first, double second, String operator) {
     switch (operator) {
@@ -97,8 +99,24 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
     }
   }
 
+  void showError(String message) {
+    display = "Error";
+    statusMessage = message;
+    hasError = true;
+
+    accumulator = null;
+    currentOperand = "";
+    pendingOperator = null;
+    startNewOperand = true;
+    justEvaluated = false;
+  }
+
   void pressOperator(String operator) {
     setState(() {
+      if (hasError) {
+        return;
+      }
+
       if (accumulator == null && currentOperand.isEmpty) {
         return;
       }
@@ -117,12 +135,11 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
         double? result = calculate(accumulator!, number, pendingOperator!);
 
         if (result == null || !result.isFinite) {
-          display = "Error";
-          accumulator = null;
-          currentOperand = "";
-          pendingOperator = null;
-          startNewOperand = true;
-          justEvaluated = true;
+          showError(
+            result == null
+                ? "Cannot divide by zero. Press AC or new number"
+                : "Invalid result. Press AC or new number",
+          );
           return;
         }
 
@@ -145,6 +162,10 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
 
   void pressEquals() {
     setState(() {
+      if (hasError) {
+        return;
+      }
+
       if (pendingOperator == null || startNewOperand) {
         return;
       }
@@ -154,12 +175,11 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
       double? result = calculate(accumulator!, number, pendingOperator!);
 
       if (result == null || !result.isFinite) {
-        display = "Error";
-        accumulator = null;
-        currentOperand = "";
-        pendingOperator = null;
-        startNewOperand = true;
-        justEvaluated = true;
+        showError(
+          result == null
+              ? "Cannot divide by zero. Press AC or new number"
+              : "Invalid result. Press AC or new number",
+        );
         return;
       }
 
@@ -169,6 +189,7 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
       if (result == result.truncateToDouble()) {
         display = result.toInt().toString();
       }
+      statusMessage = "Calculation complete";
 
       currentOperand = "";
       pendingOperator = null;
@@ -185,13 +206,15 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
       startNewOperand = true;
       justEvaluated = false;
       display = "0";
+      hasError = false;
+      statusMessage = "Enter a number";
     });
   }
 
   // Helper method to update dashboard state upon button press
   void pressDigit(String digit) {
     setState(() {
-      if (justEvaluated) {
+      if (justEvaluated || hasError) {
         accumulator = null;
         pendingOperator = null;
         currentOperand = "";
@@ -210,6 +233,7 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
         }
       }
       display = currentOperand;
+      statusMessage = "Entering Number";
     });
   }
 
@@ -222,7 +246,6 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
     final cardBg = widget.isDark ? const Color(0xFF282A36) : Colors.white;
 
     return Scaffold(
-      backgroundColor: screenBg,
       appBar: AppBar(
         title: const Text(
           "The Calculator State Lab",
@@ -243,89 +266,113 @@ class _ControlDeckScreenState extends State<ControlDeckScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    "CALCULATOR",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        color: screenBg,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      "CALCULATOR",
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      display,
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        display,
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        statusMessage,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: hasError
+                              ? Colors.redAccent
+                              : (widget.isDark
+                                    ? Colors.white70
+                                    : Colors.black54),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // --- GRID OF TACTILE 3D BUTTONS ---
+              GridView.count(
+                crossAxisCount: 4,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                children: [
+                  for (String value in [
+                    "7",
+                    "8",
+                    "9",
+                    "÷",
+                    "4",
+                    "5",
+                    "6",
+                    "×",
+                    "1",
+                    "2",
+                    "3",
+                    "-",
+                    "AC",
+                    "0",
+                    "=",
+                    "+",
+                  ])
+                    TactileButton(
+                      label: value,
+                      accentColor: Colors.blueAccent,
+                      isDark: widget.isDark,
+                      onPressed: () {
+                        if ("0123456789".contains(value) && value.length == 1) {
+                          pressDigit(value);
+                        } else if (["+", "-", "×", "÷"].contains(value)) {
+                          pressOperator(value);
+                        } else if (value == "=") {
+                          pressEquals();
+                        } else if (value == "AC") {
+                          pressClear();
+                        }
+                      },
+                    ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // --- GRID OF TACTILE 3D BUTTONS ---
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                for (String value in [
-                  "7",
-                  "8",
-                  "9",
-                  "÷",
-                  "4",
-                  "5",
-                  "6",
-                  "×",
-                  "1",
-                  "2",
-                  "3",
-                  "-",
-                  "AC",
-                  "0",
-                  "=",
-                  "+",
-                ])
-                  TactileButton(
-                    label: value,
-                    accentColor: Colors.blueAccent,
-                    isDark: widget.isDark,
-                    onPressed: () {
-                      if ("0123456789".contains(value) && value.length == 1) {
-                        pressDigit(value);
-                      } else if (["+", "-", "×", "÷"].contains(value)) {
-                        pressOperator(value);
-                      } else if (value == "=") {
-                        pressEquals();
-                      } else if (value == "AC") {
-                        pressClear();
-                      }
-                    },
-                  ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
